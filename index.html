@@ -91,8 +91,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
 <footer>© 2026 InfoBanten — Portal Informasi Banten</footer>
 
 <script>
-const PAYMENT_QRIS = "QRIS.jpeg";
-const ADMIN_WA = "082121273706"; // GANTI dengan nomor WhatsApp admin
+const PAYMENT_QRIS = "QRIS TERBARUU.jpeg";
+const ADMIN_WA = "6281234567890"; // GANTI dengan nomor WhatsApp admin
 let selected = null;
 
 function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)}
@@ -118,12 +118,26 @@ function getData(){
   return {no,date:new Date().toLocaleDateString('id-ID'),customer,phone,email:document.getElementById('email').value.trim(),title,description:document.getElementById('description').value.trim(),notes:document.getElementById('notes').value.trim(),package:selected.name,base:selected.price,revision:rev?5000:0,total:selected.price+(rev?5000:0)};
 }
 function imageToDataURL(url){
-  return fetch(url).then(r=>r.blob()).then(blob=>new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>resolve(reader.result);
-    reader.onerror=reject;
-    reader.readAsDataURL(blob);
-  }));
+  return fetch(encodeURI(url))
+    .then(r=>{
+      if(!r.ok) throw new Error("QRIS tidak ditemukan: "+r.status);
+      return r.blob();
+    })
+    .then(blob=>new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const img=new Image();
+        img.onload=()=>resolve({
+          dataUrl:reader.result,
+          width:img.naturalWidth,
+          height:img.naturalHeight
+        });
+        img.onerror=reject;
+        img.src=reader.result;
+      };
+      reader.onerror=reject;
+      reader.readAsDataURL(blob);
+    }));
 }
 
 async function generateInvoice(){
@@ -169,10 +183,17 @@ async function generateInvoice(){
 
   try{
     const qr=await imageToDataURL(PAYMENT_QRIS);
-    doc.addImage(qr,'JPEG',140,y+12,42,42);
+    // Pertahankan rasio asli QRIS agar tidak gepeng/stretch.
+    const maxW=46, maxH=46;
+    const ratio=qr.width/qr.height;
+    let qrW=maxW, qrH=maxW/ratio;
+    if(qrH>maxH){ qrH=maxH; qrW=maxH*ratio; }
+    const qrX=181-(qrW/2), qrY=y+35-(qrH/2);
+    const format = qr.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    doc.addImage(qr.dataUrl,format,qrX,qrY,qrW,qrH);
   }catch(e){
     doc.setFontSize(8);doc.setTextColor(180,50,50);
-    doc.text('QRIS tidak dapat dimuat. Pastikan file QRIS.jpeg ada di folder/repository yang sama dengan index.html.',21,y+54);
+    doc.text('QRIS tidak dapat dimuat. Pastikan file QRIS TERBARUU.jpeg ada di folder/repository yang sama dengan index.html.',21,y+54);
   }
 
   doc.setFontSize(8);doc.setTextColor(100,110,125);
