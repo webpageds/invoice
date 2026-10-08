@@ -66,7 +66,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
   <div id="selectedText" class="note">Belum ada paket dipilih.</div>
   <div class="total"><small>Total Pembayaran</small><strong id="total">Rp0</strong></div>
   <button class="primary" onclick="generateInvoice()">Buat & Unduh Invoice PDF</button>
-  <div class="note"><b>Alur pemesanan</b><br>
+  <div class="note"><b>Pembayaran</b><br>
+        Setelah invoice diunduh, lakukan pembayaran melalui QRIS pada invoice dengan nominal sesuai total pesanan.
+        Setelah berhasil, kirim bukti pembayaran + nomor invoice ke WhatsApp admin yang tercantum pada invoice.
+        </div>
+        <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+        <div class="note"><b>Alur pemesanan</b><br>
   1. Buat dan unduh invoice.<br>
   2. Lakukan pembayaran sesuai total pada invoice.<br>
   3. Admin melakukan pengecekan pembayaran terlebih dahulu.<br>
@@ -86,6 +91,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
 <footer>© 2026 InfoBanten — Portal Informasi Banten</footer>
 
 <script>
+const PAYMENT_QRIS = "qris.png";
+const ADMIN_WA = "6281234567890"; // GANTI dengan nomor WhatsApp admin
 let selected = null;
 
 function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)}
@@ -110,38 +117,82 @@ function getData(){
   const no='INV-IB-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+Math.floor(1000+Math.random()*9000);
   return {no,date:new Date().toLocaleDateString('id-ID'),customer,phone,email:document.getElementById('email').value.trim(),title,description:document.getElementById('description').value.trim(),notes:document.getElementById('notes').value.trim(),package:selected.name,base:selected.price,revision:rev?5000:0,total:selected.price+(rev?5000:0)};
 }
-function generateInvoice(){
+function imageToDataURL(url){
+  return fetch(url).then(r=>r.blob()).then(blob=>new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(blob);
+  }));
+}
+
+async function generateInvoice(){
   const d=getData(); if(!d)return;
   const {jsPDF}=window.jspdf, doc=new jsPDF();
   const blue=[11,31,58], accent=[18,100,214];
+
   doc.setFillColor(...blue);doc.rect(0,0,210,36,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont(undefined,'bold');doc.text('INFOBANTEN',16,18);
+  doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont(undefined,'bold');
+  doc.text('INFOBANTEN',16,18);
   doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text('Layanan Publikasi Media Lokal',16,27);
-  doc.setTextColor(30,40,55);doc.setFontSize(18);doc.setFont(undefined,'bold');doc.text('INVOICE',150,18);
+  doc.setFontSize(18);doc.setFont(undefined,'bold');doc.text('INVOICE',150,18);
   doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text(d.no,150,25);doc.text(d.date,150,31);
+
   let y=53;
-  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('DITAGIHKAN KEPADA',16,y);doc.setFont(undefined,'normal');y+=7;
-  doc.text(d.customer,16,y);y+=6;doc.text('WhatsApp: '+d.phone,16,y);y+=6;if(d.email)doc.text(d.email,16,y),y+=6;
+  doc.setTextColor(30,40,55);doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('DITAGIHKAN KEPADA',16,y);
+  doc.setFont(undefined,'normal');y+=7;doc.text(d.customer,16,y);y+=6;doc.text('WhatsApp: '+d.phone,16,y);y+=6;
+  if(d.email){doc.text(d.email,16,y);y+=6;}
+
   y+=8;doc.setFillColor(245,248,252);doc.roundedRect(16,y-6,178,28,3,3,'F');
   doc.setFont(undefined,'bold');doc.text('Layanan',21,y);doc.text('Jumlah',165,y);y+=8;
   doc.setFont(undefined,'normal');doc.text(d.package,21,y);doc.text(rupiah(d.base),165,y);y+=8;
   if(d.revision){doc.text('Tambahan revisi (maks. 2x)',21,y);doc.text(rupiah(d.revision),165,y);y+=8;}
   y+=7;doc.setDrawColor(220,225,232);doc.line(16,y,194,y);y+=10;
-  doc.setFont(undefined,'bold');doc.text('TOTAL',21,y);doc.setTextColor(...accent);doc.setFontSize(15);doc.text(rupiah(d.total),165,y);doc.setTextColor(30,40,55);
-  y+=18;doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('DETAIL PUBLIKASI',16,y);y+=7;doc.setFont(undefined,'normal');
+  doc.setFont(undefined,'bold');doc.text('TOTAL PEMBAYARAN',21,y);
+  doc.setTextColor(...accent);doc.setFontSize(15);doc.text(rupiah(d.total),165,y);
+  doc.setTextColor(30,40,55);y+=18;
+
+  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('DETAIL PUBLIKASI',16,y);y+=7;doc.setFont(undefined,'normal');
   doc.text('Judul/Topik: '+d.title,16,y);y+=7;
-  if(d.description){doc.text(doc.splitTextToSize('Bahan: '+d.description,175),16,y);y+=Math.min(30,doc.splitTextToSize('Bahan: '+d.description,175).length*5)+3;}
-  if(d.notes){doc.text(doc.splitTextToSize('Catatan: '+d.notes,175),16,y);y+=Math.min(25,doc.splitTextToSize('Catatan: '+d.notes,175).length*5)+3;}
-  y=Math.max(y,245);doc.setFontSize(8);doc.setTextColor(100,110,125);
-  doc.text('Invoice ini merupakan dokumen tagihan layanan publikasi InfoBanten.',16,y);
-  doc.text('Konten berbayar/advertorial mengikuti kebijakan dan standar redaksi InfoBanten.',16,y+5);
+  if(d.description){const lines=doc.splitTextToSize('Bahan: '+d.description,175);doc.text(lines,16,y);y+=Math.min(30,lines.length*5)+3;}
+  if(d.notes){const lines=doc.splitTextToSize('Catatan: '+d.notes,175);doc.text(lines,16,y);y+=Math.min(25,lines.length*5)+3;}
+
+  // QRIS otomatis masuk ke invoice PDF.
+  y=Math.max(y+8,125);
+  doc.setFillColor(247,250,253);doc.roundedRect(16,y,178,86,4,4,'F');
+  doc.setTextColor(...blue);doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text('PEMBAYARAN MELALUI QRIS',21,y+10);
+  doc.setTextColor(30,40,55);doc.setFontSize(9);doc.setFont(undefined,'normal');
+  doc.text('Scan QRIS dan bayar tepat sesuai nominal invoice:',21,y+18);
+  doc.setFont(undefined,'bold');doc.text(rupiah(d.total),21,y+26);doc.setFont(undefined,'normal');
+  doc.text('Setelah pembayaran, kirim bukti pembayaran + nomor invoice',21,y+35);
+  doc.text('ke WhatsApp admin: '+ADMIN_WA.replace(/^62/,'0'),21,y+41);
+
+  try{
+    const qr=await imageToDataURL(PAYMENT_QRIS);
+    doc.addImage(qr,'PNG',140,y+12,42,42);
+  }catch(e){
+    doc.setFontSize(8);doc.setTextColor(180,50,50);
+    doc.text('QRIS tidak dapat dimuat. Pastikan qris.png ada.',21,y+54);
+  }
+
+  doc.setFontSize(8);doc.setTextColor(100,110,125);
+  doc.text('Status: MENUNGGU VERIFIKASI PEMBAYARAN',21,y+58);
+  doc.text('Pesanan diproses setelah pembayaran diverifikasi admin.',21,y+64);
+  doc.text('Link publikasi dikirimkan setelah artikel tayang.',21,y+70);
+
+  doc.setTextColor(100,110,125);doc.setFontSize(8);
+  doc.text('Invoice ini merupakan dokumen tagihan layanan publikasi InfoBanten.',16,282);
+  doc.text('Konten berbayar/advertorial mengikuti kebijakan dan standar redaksi InfoBanten.',16,287);
+
   doc.save(d.no+'.pdf');
+
   document.getElementById('selectedText').innerHTML =
     `<b>Invoice berhasil dibuat.</b><br>No. Invoice: ${d.no}<br><br>
-    Silakan lakukan pembayaran sesuai total invoice. Setelah pembayaran dilakukan,
-    admin akan melakukan recheck terlebih dahulu sebelum pesanan diproses.<br><br>
+    Bayar melalui QRIS pada invoice dengan nominal <b>${rupiah(d.total)}</b>.
+    Setelah membayar, kirim bukti pembayaran + nomor invoice ke WhatsApp admin.
+    Admin akan melakukan recheck sebelum pesanan diproses.<br><br>
     <b>Status awal: Menunggu Verifikasi Pembayaran</b>`;
-  document.getElementById('selectedText').style.color = '#0b4da8';
+  document.getElementById('selectedText').style.color='#0b4da8';
 }
 </script>
 </body>
