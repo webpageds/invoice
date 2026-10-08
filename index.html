@@ -91,7 +91,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
 <footer>© 2026 InfoBanten — Portal Informasi Banten</footer>
 
 <script>
-const PAYMENT_QRIS = "qris.png";
+const PAYMENT_QRIS = "QRIS.jpeg";
 const ADMIN_WA = "6281234567890"; // GANTI dengan nomor WhatsApp admin
 let selected = null;
 
@@ -169,10 +169,10 @@ async function generateInvoice(){
 
   try{
     const qr=await imageToDataURL(PAYMENT_QRIS);
-    doc.addImage(qr,'PNG',140,y+12,42,42);
+    doc.addImage(qr,'JPEG',140,y+12,42,42);
   }catch(e){
     doc.setFontSize(8);doc.setTextColor(180,50,50);
-    doc.text('QRIS tidak dapat dimuat. Pastikan qris.png ada.',21,y+54);
+    doc.text('QRIS tidak dapat dimuat. Pastikan file QRIS.jpeg ada di folder/repository yang sama dengan index.html.',21,y+54);
   }
 
   doc.setFontSize(8);doc.setTextColor(100,110,125);
