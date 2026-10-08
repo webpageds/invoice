@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pemesanan Publikasi — InfoBanten</title>
+<meta name="description" content="Pemesanan layanan publikasi InfoBanten. Pilih paket, isi data, dan unduh invoice otomatis.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--navy:#0b1f3a;--blue:#1264d6;--sky:#eef6ff;--text:#172033;--muted:#667085;--line:#e6eaf0;--white:#fff;--green:#16a34a}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f8fb;color:var(--text)}
+header{background:linear-gradient(135deg,#071b35,#1264d6);color:#fff;padding:26px 20px 70px}
+.nav{max-width:1100px;margin:auto;display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:900;font-size:22px;letter-spacing:.2px}.badge{font-size:12px;background:#ffffff1c;border:1px solid #ffffff35;padding:8px 12px;border-radius:999px}
+.hero{max-width:1100px;margin:55px auto 0}.hero h1{font-size:42px;line-height:1.08;margin:0 0 12px}.hero p{max-width:700px;color:#dceaff;font-size:16px}
+.wrap{max-width:1100px;margin:-35px auto 60px;padding:0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 12px 35px #0b1f3a0d}.section-title{font-size:18px;font-weight:800;margin:0 0 18px}
+.packages{display:grid;gap:12px}.package{border:1.5px solid var(--line);border-radius:15px;padding:16px;cursor:pointer;transition:.2s;background:#fff}.package:hover,.package.selected{border-color:var(--blue);box-shadow:0 6px 20px #1264d61a}.package-row{display:flex;justify-content:space-between;gap:15px}.package h3{margin:0 0 5px;font-size:16px}.price{font-weight:900;color:var(--blue);white-space:nowrap}.package p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+label{display:block;font-size:13px;font-weight:700;margin:14px 0 7px}input,textarea,select{width:100%;padding:12px 13px;border:1px solid #d9dee8;border-radius:11px;font:inherit;outline:none;background:#fff}input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1264d614}textarea{min-height:100px;resize:vertical}
+.addon{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:15px;background:#fafcff}.addon input{width:auto;margin-top:3px}.addon strong{display:block;font-size:14px}.addon span{font-size:12px;color:var(--muted)}
+.summary{position:sticky;top:15px}.total{background:var(--navy);color:#fff;border-radius:16px;padding:18px;margin-top:18px}.total small{color:#cbd7e8}.total strong{font-size:28px;display:block;margin-top:4px}
+button{border:0;border-radius:11px;padding:13px 16px;font-weight:800;cursor:pointer;font:inherit}.primary{background:var(--blue);color:#fff;width:100%;margin-top:15px}.secondary{background:#eaf2ff;color:#0b4da8;width:100%;margin-top:10px}.success{background:var(--green);color:#fff;width:100%;margin-top:10px}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.hero h1{font-size:32px}.summary{position:static}}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav"><div class="brand">INFOBANTEN</div><div class="badge">Layanan Publikasi Media Lokal</div></div>
+  <div class="hero">
+    <h1>Publikasikan informasi Anda di InfoBanten.</h1>
+    <p>Pilih paket publikasi, lengkapi data, lalu invoice dibuat otomatis. Sederhana, transparan, dan siap dikirim ke pelanggan.</p>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="grid">
+<section class="card">
+  <h2 class="section-title">1. Pilih Paket</h2>
+  <div class="packages" id="packages">
+    <div class="package" data-price="60000" data-name="Publikasi" onclick="choosePackage(this)">
+      <div class="package-row"><div><h3>Publikasi</h3><p>Publikasi artikel yang sudah disiapkan klien + 1 foto.</p></div><div class="price">Rp60.000</div></div>
+    </div>
+    <div class="package" data-price="75000" data-name="Publikasi + Penulisan" onclick="choosePackage(this)">
+      <div class="package-row"><div><h3>Publikasi + Penulisan</h3><p>Publikasi + jasa penulisan artikel + 1 foto.</p></div><div class="price">Rp75.000</div></div>
+    </div>
+    <div class="package" data-price="100000" data-name="Publikasi Premium" onclick="choosePackage(this)">
+      <div class="package-row"><div><h3>Publikasi Premium</h3><p>Publikasi + jasa penulisan artikel + 2–3 foto.</p></div><div class="price">Rp100.000</div></div>
+    </div>
+  </div>
+
+  <label class="addon"><input type="checkbox" id="revision" onchange="updateTotal()"><div><strong>Tambahan revisi — Rp5.000</strong><span>Termasuk maksimal 2 kali revisi untuk artikel yang dikerjakan tim.</span></div></label>
+
+  <h2 class="section-title" style="margin-top:25px">2. Data Pemesan</h2>
+  <label>Nama / Nama Instansi *</label><input id="customer" placeholder="Contoh: PT Maju Bersama">
+  <label>Nomor WhatsApp *</label><input id="phone" placeholder="08xxxxxxxxxx">
+  <label>Email</label><input id="email" type="email" placeholder="email@contoh.com">
+  <label>Judul / Topik Publikasi *</label><input id="title" placeholder="Judul kegiatan atau artikel">
+  <label>Deskripsi / Bahan Artikel</label><textarea id="description" placeholder="Tulis informasi yang ingin dipublikasikan atau instruksi penulisan..."></textarea>
+  <label>Catatan Tambahan</label><textarea id="notes" placeholder="Opsional"></textarea>
+</section>
+
+<section class="card summary">
+  <h2 class="section-title">3. Ringkasan Pesanan</h2>
+  <div id="selectedText" class="note">Belum ada paket dipilih.</div>
+  <div class="total"><small>Total Pembayaran</small><strong id="total">Rp0</strong></div>
+  <button class="primary" onclick="generateInvoice()">Buat & Unduh Invoice PDF</button>
+  <button class="success" onclick="sendWhatsApp()">Konfirmasi Pesanan via WhatsApp</button>
+  <div class="note">Invoice dibuat otomatis berdasarkan data yang Anda isi. Simpan invoice dan kirimkan bukti pembayaran sesuai instruksi admin.</div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+  <div class="note"><b>Ketentuan singkat</b><br>
+  • Publikasi berbayar diperlakukan sebagai layanan konten/advertorial sesuai kebijakan redaksi.<br>
+  • Materi harus dapat dipertanggungjawabkan dan tidak melanggar hukum.<br>
+  • Revisi tambahan yang dipilih mencakup maksimal 2 kali revisi.<br>
+  • Jadwal tayang dikonfirmasi oleh admin setelah pesanan diterima.</div>
+</section>
+</div>
+</main>
+<footer>© 2026 InfoBanten — Portal Informasi Banten</footer>
+
+<script>
+let selected = null;
+const adminWA = "6281234567890"; // GANTI dengan nomor WhatsApp admin InfoBanten
+
+function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)}
+function choosePackage(el){
+  document.querySelectorAll('.package').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');
+  selected={name:el.dataset.name,price:Number(el.dataset.price)};
+  updateTotal();
+}
+function updateTotal(){
+  const base=selected?selected.price:0, rev=document.getElementById('revision').checked?5000:0;
+  document.getElementById('total').textContent=rupiah(base+rev);
+  document.getElementById('selectedText').innerHTML=selected
+    ? `<b>${selected.name}</b><br>${rupiah(base)}${rev?' + Rp5.000 revisi (maks. 2x)':''}`
+    : 'Belum ada paket dipilih.';
+}
+function getData(){
+  if(!selected){alert('Pilih paket terlebih dahulu.');return null}
+  const customer=document.getElementById('customer').value.trim(), phone=document.getElementById('phone').value.trim(), title=document.getElementById('title').value.trim();
+  if(!customer||!phone||!title){alert('Lengkapi Nama/Instansi, WhatsApp, dan Judul/Topik.');return null}
+  const rev=document.getElementById('revision').checked;
+  const no='INV-IB-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+Math.floor(1000+Math.random()*9000);
+  return {no,date:new Date().toLocaleDateString('id-ID'),customer,phone,email:document.getElementById('email').value.trim(),title,description:document.getElementById('description').value.trim(),notes:document.getElementById('notes').value.trim(),package:selected.name,base:selected.price,revision:rev?5000:0,total:selected.price+(rev?5000:0)};
+}
+function generateInvoice(){
+  const d=getData(); if(!d)return;
+  const {jsPDF}=window.jspdf, doc=new jsPDF();
+  const blue=[11,31,58], accent=[18,100,214];
+  doc.setFillColor(...blue);doc.rect(0,0,210,36,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont(undefined,'bold');doc.text('INFOBANTEN',16,18);
+  doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text('Layanan Publikasi Media Lokal',16,27);
+  doc.setTextColor(30,40,55);doc.setFontSize(18);doc.setFont(undefined,'bold');doc.text('INVOICE',150,18);
+  doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text(d.no,150,25);doc.text(d.date,150,31);
+  let y=53;
+  doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('DITAGIHKAN KEPADA',16,y);doc.setFont(undefined,'normal');y+=7;
+  doc.text(d.customer,16,y);y+=6;doc.text('WhatsApp: '+d.phone,16,y);y+=6;if(d.email)doc.text(d.email,16,y),y+=6;
+  y+=8;doc.setFillColor(245,248,252);doc.roundedRect(16,y-6,178,28,3,3,'F');
+  doc.setFont(undefined,'bold');doc.text('Layanan',21,y);doc.text('Jumlah',165,y);y+=8;
+  doc.setFont(undefined,'normal');doc.text(d.package,21,y);doc.text(rupiah(d.base),165,y);y+=8;
+  if(d.revision){doc.text('Tambahan revisi (maks. 2x)',21,y);doc.text(rupiah(d.revision),165,y);y+=8;}
+  y+=7;doc.setDrawColor(220,225,232);doc.line(16,y,194,y);y+=10;
+  doc.setFont(undefined,'bold');doc.text('TOTAL',21,y);doc.setTextColor(...accent);doc.setFontSize(15);doc.text(rupiah(d.total),165,y);doc.setTextColor(30,40,55);
+  y+=18;doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('DETAIL PUBLIKASI',16,y);y+=7;doc.setFont(undefined,'normal');
+  doc.text('Judul/Topik: '+d.title,16,y);y+=7;
+  if(d.description){doc.text(doc.splitTextToSize('Bahan: '+d.description,175),16,y);y+=Math.min(30,doc.splitTextToSize('Bahan: '+d.description,175).length*5)+3;}
+  if(d.notes){doc.text(doc.splitTextToSize('Catatan: '+d.notes,175),16,y);y+=Math.min(25,doc.splitTextToSize('Catatan: '+d.notes,175).length*5)+3;}
+  y=Math.max(y,245);doc.setFontSize(8);doc.setTextColor(100,110,125);
+  doc.text('Invoice ini merupakan dokumen tagihan layanan publikasi InfoBanten.',16,y);
+  doc.text('Konten berbayar/advertorial mengikuti kebijakan dan standar redaksi InfoBanten.',16,y+5);
+  doc.save(d.no+'.pdf');
+}
+function sendWhatsApp(){
+  const d=getData(); if(!d)return;
+  const msg=`Halo Admin InfoBanten,%0ASaya ingin memesan layanan publikasi.%0A%0ANo. Invoice: ${d.no}%0ANama/Instansi: ${encodeURIComponent(d.customer)}%0APaket: ${encodeURIComponent(d.package)}%0ARevisi 2x: ${d.revision?'Ya (+Rp5.000)':'Tidak'}%0AJudul: ${encodeURIComponent(d.title)}%0ATotal: ${encodeURIComponent(rupiah(d.total))}%0A%0AMohon informasi langkah pembayaran dan jadwal tayang.`;
+  window.open(`https://wa.me/${adminWA}?text=${msg}`,'_blank');
+}
+</script>
+</body>
+</html>
