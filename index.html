@@ -66,14 +66,20 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
   <div id="selectedText" class="note">Belum ada paket dipilih.</div>
   <div class="total"><small>Total Pembayaran</small><strong id="total">Rp0</strong></div>
   <button class="primary" onclick="generateInvoice()">Buat & Unduh Invoice PDF</button>
-  <button class="success" onclick="sendWhatsApp()">Konfirmasi Pesanan via WhatsApp</button>
-  <div class="note">Invoice dibuat otomatis berdasarkan data yang Anda isi. Simpan invoice dan kirimkan bukti pembayaran sesuai instruksi admin.</div>
+  <div class="note"><b>Alur pemesanan</b><br>
+  1. Buat dan unduh invoice.<br>
+  2. Lakukan pembayaran sesuai total pada invoice.<br>
+  3. Admin melakukan pengecekan pembayaran terlebih dahulu.<br>
+  4. Setelah pembayaran terverifikasi, pesanan diproses.<br>
+  5. Setelah publikasi tayang, link artikel dikirimkan oleh admin.
+  </div>
   <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
   <div class="note"><b>Ketentuan singkat</b><br>
   • Publikasi berbayar diperlakukan sebagai layanan konten/advertorial sesuai kebijakan redaksi.<br>
   • Materi harus dapat dipertanggungjawabkan dan tidak melanggar hukum.<br>
   • Revisi tambahan yang dipilih mencakup maksimal 2 kali revisi.<br>
-  • Jadwal tayang dikonfirmasi oleh admin setelah pesanan diterima.</div>
+  • Pesanan baru diproses setelah pembayaran berhasil diverifikasi oleh admin.<br>
+  • Link publikasi dikirimkan setelah artikel berhasil tayang.</div>
 </section>
 </div>
 </main>
@@ -81,7 +87,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 20px 35px}
 
 <script>
 let selected = null;
-const adminWA = "6281234567890"; // GANTI dengan nomor WhatsApp admin InfoBanten
 
 function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)}
 function choosePackage(el){
@@ -131,11 +136,12 @@ function generateInvoice(){
   doc.text('Invoice ini merupakan dokumen tagihan layanan publikasi InfoBanten.',16,y);
   doc.text('Konten berbayar/advertorial mengikuti kebijakan dan standar redaksi InfoBanten.',16,y+5);
   doc.save(d.no+'.pdf');
-}
-function sendWhatsApp(){
-  const d=getData(); if(!d)return;
-  const msg=`Halo Admin InfoBanten,%0ASaya ingin memesan layanan publikasi.%0A%0ANo. Invoice: ${d.no}%0ANama/Instansi: ${encodeURIComponent(d.customer)}%0APaket: ${encodeURIComponent(d.package)}%0ARevisi 2x: ${d.revision?'Ya (+Rp5.000)':'Tidak'}%0AJudul: ${encodeURIComponent(d.title)}%0ATotal: ${encodeURIComponent(rupiah(d.total))}%0A%0AMohon informasi langkah pembayaran dan jadwal tayang.`;
-  window.open(`https://wa.me/${adminWA}?text=${msg}`,'_blank');
+  document.getElementById('selectedText').innerHTML =
+    `<b>Invoice berhasil dibuat.</b><br>No. Invoice: ${d.no}<br><br>
+    Silakan lakukan pembayaran sesuai total invoice. Setelah pembayaran dilakukan,
+    admin akan melakukan recheck terlebih dahulu sebelum pesanan diproses.<br><br>
+    <b>Status awal: Menunggu Verifikasi Pembayaran</b>`;
+  document.getElementById('selectedText').style.color = '#0b4da8';
 }
 </script>
 </body>
